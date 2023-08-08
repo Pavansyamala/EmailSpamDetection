@@ -5,6 +5,8 @@ from src.logger import logging
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import RandomOverSampler
+
 from dataclasses import dataclass
 
 @dataclass
@@ -21,14 +23,26 @@ class DataIngestion:
         logging.info("Entered the data ingestion method or component")
         try:
             df=pd.read_csv('D:/EmailSpamClassification/notebook/spam_ham_dataset.csv')
+            df.drop(columns=['Unnamed: 0'] , inplace = True)
+            df.drop(columns = ['label_num'] , inplace = True)
+            ROS = RandomOverSampler()
+            text_resampled , label_num_resampled = ROS.fit_resample(df['text'].values.reshape(-1,1) , df['label'].values.reshape(-1,1))
+            resampled_data = pd.DataFrame(label_num_resampled ).reset_index().merge(how = 'inner' , on = 'index', right = pd.DataFrame(text_resampled).reset_index()).drop(columns = ['index'])
+            resampled_data['label'] = resampled_data['0_x']
+            resampled_data['text'] = resampled_data['0_y']      
+            resampled_data.drop(columns = ['0_x','0_y'] , inplace = True)
+            resampled_data['text'] = resampled_data['text'].apply(lambda x : x.split('Subject: ')[-1])
+            resampled_data['Subject'] = resampled_data['text']
+            resampled_data.drop(columns=['text'] , inplace = True)
+            print(resampled_data.head())
             logging.info('Read the dataset as dataframe')
 
             os.makedirs(os.path.dirname(self.ingestion_config.train_data_path),exist_ok=True)
 
-            df.to_csv(self.ingestion_config.raw_data_path,index=False,header=True)
+            resampled_data.to_csv(self.ingestion_config.raw_data_path,index=False,header=True)
 
             logging.info("Train test split initiated")
-            train_set,test_set=train_test_split(df,test_size=0.2,random_state=42)
+            train_set,test_set=train_test_split(resampled_data,test_size=0.2,random_state=42)
 
             train_set.to_csv(self.ingestion_config.train_data_path,index=False,header=True)
 
