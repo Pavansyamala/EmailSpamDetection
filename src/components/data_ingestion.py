@@ -34,7 +34,7 @@ class DataIngestion:
             resampled_data['text'] = resampled_data['text'].apply(lambda x : x.split('Subject: ')[-1])
             resampled_data['Subject'] = resampled_data['text']
             resampled_data.drop(columns=['text'] , inplace = True)
-            print(resampled_data.head())
+            # print(resampled_data.head())
             logging.info('Read the dataset as dataframe')
 
             os.makedirs(os.path.dirname(self.ingestion_config.train_data_path),exist_ok=True)
